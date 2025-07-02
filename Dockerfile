@@ -2,7 +2,7 @@ FROM oven/bun:alpine AS builder
 WORKDIR /app
 
 COPY ./package.json ./bun.lock ./
-RUN bun install
+RUN bun install --force
 
 COPY . .
 RUN bun run build
@@ -11,7 +11,7 @@ FROM oven/bun:alpine AS runner
 WORKDIR /app
 
 COPY ./package.json ./bun.lock ./
-RUN bun install --production --ignore-scripts --no-cache
+RUN bun install  --force --production --ignore-scripts --no-cache
 
 COPY --from=builder /app/dist ./dist
 
