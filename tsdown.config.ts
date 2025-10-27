@@ -1,4 +1,4 @@
-import { defineConfig } from "tsup"
+import { defineConfig } from "tsdown"
 
 export default defineConfig({
   entry: ["src/main.ts"],
@@ -7,7 +7,7 @@ export default defineConfig({
   target: "es2022",
   platform: "node",
 
-  minify: true,
+  sourcemap: true,
   clean: true,
   removeNodeProtocol: false,
 

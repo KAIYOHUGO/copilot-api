@@ -9,7 +9,10 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
 
     <script src="https://unpkg.com/lucide-react@0.378.0/dist/umd/lucide.min.js"></script>
 
@@ -89,12 +92,7 @@
         border-color: var(--color-blue);
       }
 
-      /* Remove all rounded corners */
-      .rounded-lg,
-      .rounded-md,
-      .rounded-full {
-        border-radius: 0 !important;
-      }
+
     </style>
   </head>
   <body class="antialiased">
@@ -102,7 +100,10 @@
       <div class="max-w-7xl mx-auto">
         <!-- Header Section -->
         <header class="mb-6">
-          <h1 class="text-2xl font-bold flex items-center gap-2" style="color: var(--color-fg-lightest)">
+          <h1
+            class="text-2xl font-bold flex items-center gap-2"
+            style="color: var(--color-fg-lightest)"
+          >
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="24"
@@ -117,20 +118,30 @@
               style="color: var(--color-aqua-accent)"
             >
               <path d="M15.6 3.3a10 10 0 1 0 5.1 5.1" />
-              <path d="M12 12a1 1 0 0 0-1-1v4a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1h-3z" />
+              <path
+                d="M12 12a1 1 0 0 0-1-1v4a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1h-3z"
+              />
               <path d="M12 6.8a10 10 0 0 0 -3.2 7.2" />
             </svg>
             <span>Copilot API Usage Dashboard</span>
           </h1>
-          <p class="mt-1 text-sm" style="color: var(--color-gray)">Should be the same as the one in VSCode</p>
+          <p class="mt-1 text-sm" style="color: var(--color-gray)">
+            Should be the same as the one in VSCode
+          </p>
         </header>
 
         <!-- Form Section -->
         <div
           class="mb-6 p-4 border"
-          style="background-color: var(--color-bg-soft); border-color: var(--color-bg-light-2)"
+          style="
+            background-color: var(--color-bg-soft);
+            border-color: var(--color-bg-light-2);
+          "
         >
-          <form id="endpoint-form" class="flex flex-col sm:flex-row items-center gap-3">
+          <form
+            id="endpoint-form"
+            class="flex flex-col sm:flex-row items-center gap-3"
+          >
             <label
               for="endpoint-url"
               class="font-semibold whitespace-nowrap text-sm"
@@ -152,7 +163,10 @@
               id="fetch-button"
               type="submit"
               class="w-full sm:w-auto font-bold py-1.5 px-5 transition-colors flex items-center justify-center gap-2 text-sm"
-              style="background-color: var(--color-blue); color: var(--color-bg-darkest)"
+              style="
+                background-color: var(--color-blue);
+                color: var(--color-bg-darkest);
+              "
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -183,27 +197,27 @@
 
     <script>
       document.addEventListener("DOMContentLoaded", () => {
-        const endpointForm = document.getElementById("endpoint-form")
-        const endpointUrlInput = document.getElementById("endpoint-url")
-        const contentArea = document.getElementById("content-area")
-        const fetchButton = document.getElementById("fetch-button")
+        const endpointForm = document.getElementById("endpoint-form");
+        const endpointUrlInput = document.getElementById("endpoint-url");
+        const contentArea = document.getElementById("content-area");
+        const fetchButton = document.getElementById("fetch-button");
 
         // Apply hover effect for fetch button via JS
         fetchButton.addEventListener("mouseenter", () => {
-          fetchButton.style.backgroundColor = "var(--color-blue-accent)"
-        })
+          fetchButton.style.backgroundColor = "var(--color-blue-accent)";
+        });
         fetchButton.addEventListener("mouseleave", () => {
-          fetchButton.style.backgroundColor = "var(--color-blue)"
-        })
+          fetchButton.style.backgroundColor = "var(--color-blue)";
+        });
 
-        const DEFAULT_ENDPOINT = "http://localhost:4141/usage"
+        const DEFAULT_ENDPOINT = "http://localhost:4141/usage";
 
         // --- State Management ---
         const state = {
           isLoading: false,
           error: null,
           data: null,
-        }
+        };
 
         // --- Rendering Logic ---
 
@@ -212,7 +226,7 @@
          */
         function createIcons() {
           if (typeof lucide !== "undefined") {
-            lucide.createIcons()
+            lucide.createIcons();
           }
         }
 
@@ -221,21 +235,21 @@
          */
         function render() {
           if (state.isLoading) {
-            contentArea.innerHTML = renderSpinner()
-            return
+            contentArea.innerHTML = renderSpinner();
+            return;
           }
           if (state.error) {
-            contentArea.innerHTML = renderError(state.error)
+            contentArea.innerHTML = renderError(state.error);
           } else if (state.data) {
             contentArea.innerHTML = `
                         ${renderUsageQuotas(state.data.quota_snapshots)}
                         ${renderDetailedData(state.data)}
-                    `
+                    `;
           } else {
-            contentArea.innerHTML = renderWelcomeMessage()
+            contentArea.innerHTML = renderWelcomeMessage();
           }
           // Replace placeholder icons with actual Lucide icons
-          createIcons()
+          createIcons();
         }
 
         /**
@@ -244,13 +258,13 @@
          * @returns {string} HTML string for the usage quotas section.
          */
         function renderUsageQuotas(snapshots) {
-          if (!snapshots) return ""
+          if (!snapshots) return "";
 
           const quotaCards = Object.entries(snapshots)
             .map(([key, value]) => {
-              return renderQuotaCard(key, value)
+              return renderQuotaCard(key, value);
             })
-            .join("")
+            .join("");
 
           return `
                     <section id="usage-quotas" class="mb-6">
@@ -261,7 +275,7 @@
                             ${quotaCards}
                         </div>
                     </section>
-                `
+                `;
         }
 
         /**
@@ -271,15 +285,18 @@
          * @returns {string} HTML string for a single card.
          */
         function renderQuotaCard(title, details) {
-          const { entitlement, remaining, percent_remaining, unlimited } = details
+          const { entitlement, remaining, percent_remaining, unlimited } =
+            details;
 
-          const percentUsed = unlimited ? 0 : 100 - percent_remaining
-          const used = unlimited ? "N/A" : (entitlement - remaining).toLocaleString()
+          const percentUsed = unlimited ? 0 : 100 - percent_remaining;
+          const used = unlimited
+            ? "N/A"
+            : (entitlement - remaining).toLocaleString();
 
-          let progressBarColor = "var(--color-green)"
-          if (percentUsed > 75) progressBarColor = "var(--color-yellow)"
-          if (percentUsed > 90) progressBarColor = "var(--color-red)"
-          if (unlimited) progressBarColor = "var(--color-blue)"
+          let progressBarColor = "var(--color-green)";
+          if (percentUsed > 75) progressBarColor = "var(--color-yellow)";
+          if (percentUsed > 90) progressBarColor = "var(--color-red)";
+          if (unlimited) progressBarColor = "var(--color-blue)";
 
           return `
                     <div class="p-4 border" style="background-color: var(--color-bg); border-color: var(--color-bg-light-2);">
@@ -301,7 +318,7 @@
                             <span>${unlimited ? "∞" : remaining.toLocaleString()} remaining</span>
                         </div>
                     </div>
-                `
+                `;
         }
 
         /**
@@ -311,37 +328,37 @@
          */
         function formatObject(obj) {
           if (obj === null || typeof obj !== "object") {
-            return `<span style="color: var(--color-green-accent);">${JSON.stringify(obj)}</span>`
+            return `<span style="color: var(--color-green-accent);">${JSON.stringify(obj)}</span>`;
           }
 
           return (
             '<div class="pl-4">' +
             Object.entries(obj)
               .map(([key, value]) => {
-                const formattedKey = key.replace(/_/g, " ")
-                let displayValue
+                const formattedKey = key.replace(/_/g, " ");
+                let displayValue;
 
                 if (Array.isArray(value)) {
                   displayValue =
                     value.length > 0
                       ? `<span style='color: var(--color-gray-accent)'>[...${value.length} items]</span>`
-                      : `<span style='color: var(--color-gray-accent)'>[]</span>`
+                      : `<span style='color: var(--color-gray-accent)'>[]</span>`;
                 } else if (typeof value === "object" && value !== null) {
-                  displayValue = formatObject(value)
+                  displayValue = formatObject(value);
                 } else if (typeof value === "boolean") {
-                  displayValue = `<span class="font-semibold" style="color: ${value ? "var(--color-green-accent)" : "var(--color-red-accent)"}">${value}</span>`
+                  displayValue = `<span class="font-semibold" style="color: ${value ? "var(--color-green-accent)" : "var(--color-red-accent)"}">${value}</span>`;
                 } else {
-                  displayValue = `<span style="color: var(--color-blue-accent);">${JSON.stringify(value)}</span>`
+                  displayValue = `<span style="color: var(--color-blue-accent);">${JSON.stringify(value)}</span>`;
                 }
 
                 return `<div class="mt-1">
                                 <span class="capitalize font-semibold" style="color: var(--color-fg-medium);">${formattedKey}:</span>
                                 ${typeof value === "object" && value !== null && !Array.isArray(value) ? displayValue : ` ${displayValue}`}
-                           </div>`
+                           </div>`;
               })
               .join("") +
             "</div>"
-          )
+          );
         }
 
         /**
@@ -350,7 +367,7 @@
          * @returns {string} HTML string for the full data section.
          */
         function renderDetailedData(data) {
-          const formattedDetails = formatObject(data)
+          const formattedDetails = formatObject(data);
           return `
                     <section id="detailed-data">
                         <h2 class="text-xl font-bold mb-3 flex items-center gap-2" style="color: var(--color-fg-lightest);">
@@ -360,7 +377,7 @@
                             ${formattedDetails}
                         </div>
                     </section>
-                `
+                `;
         }
 
         /**
@@ -370,8 +387,8 @@
         function renderSpinner() {
           return `
             <div class="flex justify-center items-center py-20">
-                <div class="animate-spin h-12 w-12 border-t-2 border-b-2" style="border-color: var(--color-blue);"></div>
-            </div>`
+                <div class="animate-spin h-12 w-12 rounded-full border-4 border-transparent border-t-4" style="border-top-color: var(--color-blue);"></div>
+            </div>`;
         }
 
         /**
@@ -380,12 +397,12 @@
          * @returns {string} HTML string for the error message.
          */
         function renderError(message) {
-          const container = document.createElement("div")
-          container.className = "p-3 border"
-          container.style.backgroundColor = "rgba(204, 36, 29, 0.2)"
-          container.style.borderColor = "var(--color-red)"
-          container.style.color = "var(--color-red-accent)"
-          container.setAttribute("role", "alert")
+          const container = document.createElement("div");
+          container.className = "p-3 border";
+          container.style.backgroundColor = "rgba(204, 36, 29, 0.2)";
+          container.style.borderColor = "var(--color-red)";
+          container.style.color = "var(--color-red-accent)";
+          container.setAttribute("role", "alert");
 
           container.innerHTML = `
                 <div class="flex items-center">
@@ -395,16 +412,16 @@
                         <p class="text-xs">${message}</p>
                     </div>
                 </div>
-            `
+            `;
           // Must create icons *after* innerHTML is set
           setTimeout(
             () =>
               lucide.createIcons({
                 nodes: [container.querySelector("[data-lucide]")],
               }),
-            0,
-          )
-          return container.outerHTML
+            0
+          );
+          return container.outerHTML;
         }
 
         /**
@@ -418,7 +435,7 @@
                 <h3 class="mt-2 text-lg font-semibold" style="color: var(--color-fg-lightest);">Welcome!</h3>
                 <p class="mt-1 text-sm" style="color: var(--color-gray);">Enter an API endpoint URL and click "Fetch" to see usage data.</p>
             </div>
-          `
+          `;
         }
 
         // --- Data Fetching ---
@@ -427,32 +444,34 @@
          * Fetches data from the specified API endpoint.
          */
         async function fetchData() {
-          const url = endpointUrlInput.value.trim()
+          const url = endpointUrlInput.value.trim();
           if (!url) {
-            state.error = "Endpoint URL cannot be empty."
-            state.isLoading = false
-            render()
-            return
+            state.error = "Endpoint URL cannot be empty.";
+            state.isLoading = false;
+            render();
+            return;
           }
 
-          state.isLoading = true
-          state.error = null
-          render()
+          state.isLoading = true;
+          state.error = null;
+          render();
 
           try {
-            const response = await fetch(url)
+            const response = await fetch(url);
             if (!response.ok) {
-              throw new Error(`Request failed with status ${response.status}: ${response.statusText}`)
+              throw new Error(
+                `Request failed with status ${response.status}: ${response.statusText}`
+              );
             }
-            const jsonData = await response.json()
-            state.data = jsonData
+            const jsonData = await response.json();
+            state.data = jsonData;
           } catch (error) {
-            console.error("Fetch error:", error)
-            state.data = null
-            state.error = error.message
+            console.error("Fetch error:", error);
+            state.data = null;
+            state.error = error.message;
           } finally {
-            state.isLoading = false
-            render()
+            state.isLoading = false;
+            render();
           }
         }
 
@@ -463,46 +482,49 @@
          * @param {Event} event - The form submission event.
          */
         function handleFormSubmit(event) {
-          event.preventDefault()
-          const url = endpointUrlInput.value.trim()
+          event.preventDefault();
+          const url = endpointUrlInput.value.trim();
 
           // Update URL query parameter, catching potential security errors in sandboxed environments
           try {
-            const currentUrl = new URL(window.location)
-            currentUrl.searchParams.set("endpoint", url)
-            window.history.pushState({}, "", currentUrl)
+            const currentUrl = new URL(window.location);
+            currentUrl.searchParams.set("endpoint", url);
+            window.history.pushState({}, "", currentUrl);
           } catch (e) {
-            console.warn("Could not update URL: ", e.message)
+            console.warn("Could not update URL: ", e.message);
           }
 
-          fetchData()
+          fetchData();
         }
 
         /**
          * Initializes the application.
          */
         function init() {
-          endpointForm.addEventListener("submit", handleFormSubmit)
+          endpointForm.addEventListener("submit", handleFormSubmit);
 
           // Get endpoint from URL param on load
-          const urlParams = new URLSearchParams(window.location.search)
-          const endpointFromUrl = urlParams.get("endpoint")
+          const urlParams = new URLSearchParams(window.location.search);
+          const endpointFromUrl = urlParams.get("endpoint");
 
           if (endpointFromUrl) {
-            endpointUrlInput.value = endpointFromUrl
-            fetchData()
+            endpointUrlInput.value = endpointFromUrl;
+            fetchData();
           } else {
-            endpointUrlInput.value = DEFAULT_ENDPOINT
-            render() // Render initial welcome message
+            endpointUrlInput.value = DEFAULT_ENDPOINT;
+            render(); // Render initial welcome message
           }
         }
 
         // Start the app
-        init()
-      })
+        init();
+      });
     </script>
 
-    <footer class="text-center py-4 text-xs" style="color: var(--color-gray-accent)">
+    <footer
+      class="text-center py-4 text-xs"
+      style="color: var(--color-gray-accent)"
+    >
       <p>
         Vibe coded by
         <a

@@ -42,8 +42,15 @@ export function translateChunkToAnthropicEvents(
         stop_reason: null,
         stop_sequence: null,
         usage: {
-          input_tokens: 1,
-          output_tokens: 1, // Anthropic requires this to be > 0
+          input_tokens:
+            (chunk.usage?.prompt_tokens ?? 0)
+            - (chunk.usage?.prompt_tokens_details?.cached_tokens ?? 0),
+          output_tokens: 0, // Will be updated in message_delta when finished
+          ...(chunk.usage?.prompt_tokens_details?.cached_tokens
+            !== undefined && {
+            cache_read_input_tokens:
+              chunk.usage.prompt_tokens_details.cached_tokens,
+          }),
         },
       },
     })
@@ -144,20 +151,29 @@ export function translateChunkToAnthropicEvents(
       state.contentBlockOpen = false
     }
 
-    events.push({
-      type: "message_delta",
-      delta: {
-        stop_reason: mapOpenAIStopReasonToAnthropic(choice.finish_reason),
-        stop_sequence: null,
+    events.push(
+      {
+        type: "message_delta",
+        delta: {
+          stop_reason: mapOpenAIStopReasonToAnthropic(choice.finish_reason),
+          stop_sequence: null,
+        },
+        usage: {
+          input_tokens:
+            (chunk.usage?.prompt_tokens ?? 0)
+            - (chunk.usage?.prompt_tokens_details?.cached_tokens ?? 0),
+          output_tokens: chunk.usage?.completion_tokens ?? 0,
+          ...(chunk.usage?.prompt_tokens_details?.cached_tokens
+            !== undefined && {
+            cache_read_input_tokens:
+              chunk.usage.prompt_tokens_details.cached_tokens,
+          }),
+        },
       },
-      usage: {
-        output_tokens: 1,
+      {
+        type: "message_stop",
       },
-    })
-
-    events.push({
-      type: "message_stop",
-    })
+    )
   }
 
   return events

@@ -15,6 +15,7 @@ import {
   type AnthropicMessagesPayload,
   type AnthropicResponse,
   type AnthropicTextBlock,
+  type AnthropicThinkingBlock,
   type AnthropicTool,
   type AnthropicToolResultBlock,
   type AnthropicToolUseBlock,
@@ -29,7 +30,7 @@ export function translateToOpenAI(
   payload: AnthropicMessagesPayload,
 ): ChatCompletionsPayload {
   return {
-    model: payload.model,
+    model: translateModelName(payload.model),
     messages: translateAnthropicMessagesToOpenAI(
       payload.messages,
       payload.system,
@@ -43,6 +44,16 @@ export function translateToOpenAI(
     tools: translateAnthropicToolsToOpenAI(payload.tools),
     tool_choice: translateAnthropicToolChoiceToOpenAI(payload.tool_choice),
   }
+}
+
+function translateModelName(model: string): string {
+  // Subagent requests use a specific model number which Copilot doesn't support
+  if (model.startsWith("claude-sonnet-4-")) {
+    return model.replace(/^claude-sonnet-4-.*/, "claude-sonnet-4")
+  } else if (model.startsWith("claude-opus-")) {
+    return model.replace(/^claude-opus-4-.*/, "claude-opus-4")
+  }
+  return model
 }
 
 function translateAnthropicMessagesToOpenAI(
@@ -87,18 +98,19 @@ function handleUserMessage(message: AnthropicUserMessage): Array<Message> {
       (block) => block.type !== "tool_result",
     )
 
-    if (otherBlocks.length > 0) {
-      newMessages.push({
-        role: "user",
-        content: mapContent(otherBlocks),
-      })
-    }
-
+    // Tool results must come first to maintain protocol: tool_use -> tool_result -> user
     for (const block of toolResultBlocks) {
       newMessages.push({
         role: "tool",
         tool_call_id: block.tool_use_id,
-        content: block.content,
+        content: mapContent(block.content),
+      })
+    }
+
+    if (otherBlocks.length > 0) {
+      newMessages.push({
+        role: "user",
+        content: mapContent(otherBlocks),
       })
     }
   } else {
@@ -131,11 +143,21 @@ function handleAssistantMessage(
     (block): block is AnthropicTextBlock => block.type === "text",
   )
 
+  const thinkingBlocks = message.content.filter(
+    (block): block is AnthropicThinkingBlock => block.type === "thinking",
+  )
+
+  // Combine text and thinking blocks, as OpenAI doesn't have separate thinking blocks
+  const allTextContent = [
+    ...textBlocks.map((b) => b.text),
+    ...thinkingBlocks.map((b) => b.thinking),
+  ].join("\n\n")
+
   return toolUseBlocks.length > 0 ?
       [
         {
           role: "assistant",
-          content: textBlocks.map((b) => b.text).join("\n\n") || null,
+          content: allTextContent || null,
           tool_calls: toolUseBlocks.map((toolUse) => ({
             id: toolUse.id,
             type: "function",
@@ -169,22 +191,38 @@ function mapContent(
   const hasImage = content.some((block) => block.type === "image")
   if (!hasImage) {
     return content
-      .filter((block): block is AnthropicTextBlock => block.type === "text")
-      .map((block) => block.text)
+      .filter(
+        (block): block is AnthropicTextBlock | AnthropicThinkingBlock =>
+          block.type === "text" || block.type === "thinking",
+      )
+      .map((block) => (block.type === "text" ? block.text : block.thinking))
       .join("\n\n")
   }
 
   const contentParts: Array<ContentPart> = []
   for (const block of content) {
-    if (block.type === "text") {
-      contentParts.push({ type: "text", text: block.text })
-    } else if (block.type === "image") {
-      contentParts.push({
-        type: "image_url",
-        image_url: {
-          url: `data:${block.source.media_type};base64,${block.source.data}`,
-        },
-      })
+    switch (block.type) {
+      case "text": {
+        contentParts.push({ type: "text", text: block.text })
+
+        break
+      }
+      case "thinking": {
+        contentParts.push({ type: "text", text: block.thinking })
+
+        break
+      }
+      case "image": {
+        contentParts.push({
+          type: "image_url",
+          image_url: {
+            url: `data:${block.source.media_type};base64,${block.source.data}`,
+          },
+        })
+
+        break
+      }
+      // No default
     }
   }
   return contentParts
@@ -243,21 +281,47 @@ function translateAnthropicToolChoiceToOpenAI(
 export function translateToAnthropic(
   response: ChatCompletionResponse,
 ): AnthropicResponse {
-  const choice = response.choices[0]
-  const textBlocks = getAnthropicTextBlocks(choice.message.content)
-  const toolUseBlocks = getAnthropicToolUseBlocks(choice.message.tool_calls)
+  // Merge content from all choices
+  const allTextBlocks: Array<AnthropicTextBlock> = []
+  const allToolUseBlocks: Array<AnthropicToolUseBlock> = []
+  let stopReason: "stop" | "length" | "tool_calls" | "content_filter" | null =
+    null // default
+  stopReason = response.choices[0]?.finish_reason ?? stopReason
+
+  // Process all choices to extract text and tool use blocks
+  for (const choice of response.choices) {
+    const textBlocks = getAnthropicTextBlocks(choice.message.content)
+    const toolUseBlocks = getAnthropicToolUseBlocks(choice.message.tool_calls)
+
+    allTextBlocks.push(...textBlocks)
+    allToolUseBlocks.push(...toolUseBlocks)
+
+    // Use the finish_reason from the first choice, or prioritize tool_calls
+    if (choice.finish_reason === "tool_calls" || stopReason === "stop") {
+      stopReason = choice.finish_reason
+    }
+  }
+
+  // Note: GitHub Copilot doesn't generate thinking blocks, so we don't include them in responses
 
   return {
     id: response.id,
     type: "message",
     role: "assistant",
     model: response.model,
-    content: [...textBlocks, ...toolUseBlocks],
-    stop_reason: mapOpenAIStopReasonToAnthropic(choice.finish_reason),
+    content: [...allTextBlocks, ...allToolUseBlocks],
+    stop_reason: mapOpenAIStopReasonToAnthropic(stopReason),
     stop_sequence: null,
     usage: {
-      input_tokens: response.usage?.prompt_tokens ?? 0,
+      input_tokens:
+        (response.usage?.prompt_tokens ?? 0)
+        - (response.usage?.prompt_tokens_details?.cached_tokens ?? 0),
       output_tokens: response.usage?.completion_tokens ?? 0,
+      ...(response.usage?.prompt_tokens_details?.cached_tokens
+        !== undefined && {
+        cache_read_input_tokens:
+          response.usage.prompt_tokens_details.cached_tokens,
+      }),
     },
   }
 }

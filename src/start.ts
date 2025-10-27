@@ -7,6 +7,7 @@ import { serve, type ServerHandler } from "srvx"
 import invariant from "tiny-invariant"
 
 import { ensurePaths } from "./lib/paths"
+import { initProxyFromEnv } from "./lib/proxy"
 import { generateEnvScript } from "./lib/shell"
 import { state } from "./lib/state"
 import { setupCopilotToken, setupGitHubToken } from "./lib/token"
@@ -23,10 +24,14 @@ interface RunServerOptions {
   githubToken?: string
   claudeCode: boolean
   showToken: boolean
+  proxyEnv: boolean
 }
 
-// eslint-disable-next-line max-lines-per-function
 export async function runServer(options: RunServerOptions): Promise<void> {
+  if (options.proxyEnv) {
+    initProxyFromEnv()
+  }
+
   if (options.verbose) {
     consola.level = 5
     consola.info("Verbose logging enabled")
@@ -85,13 +90,24 @@ export async function runServer(options: RunServerOptions): Promise<void> {
         ANTHROPIC_BASE_URL: serverUrl,
         ANTHROPIC_AUTH_TOKEN: "dummy",
         ANTHROPIC_MODEL: selectedModel,
+        ANTHROPIC_DEFAULT_SONNET_MODEL: selectedModel,
         ANTHROPIC_SMALL_FAST_MODEL: selectedSmallModel,
+        ANTHROPIC_DEFAULT_HAIKU_MODEL: selectedSmallModel,
+        DISABLE_NON_ESSENTIAL_MODEL_CALLS: "1",
+        CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: "1",
       },
       "claude",
     )
 
-    clipboard.writeSync(command)
-    consola.success("Copied Claude Code command to clipboard!")
+    try {
+      clipboard.writeSync(command)
+      consola.success("Copied Claude Code command to clipboard!")
+    } catch {
+      consola.warn(
+        "Failed to copy to clipboard. Here is the Claude Code command:",
+      )
+      consola.log(command)
+    }
   }
 
   consola.box(
@@ -163,6 +179,11 @@ export const start = defineCommand({
       default: false,
       description: "Show GitHub and Copilot tokens on fetch and refresh",
     },
+    "proxy-env": {
+      type: "boolean",
+      default: false,
+      description: "Initialize proxy from environment variables",
+    },
   },
   run({ args }) {
     const rateLimitRaw = args["rate-limit"]
@@ -176,10 +197,11 @@ export const start = defineCommand({
       accountType: args["account-type"],
       manual: args.manual,
       rateLimit,
-      rateLimitWait: Boolean(args.wait),
+      rateLimitWait: args.wait,
       githubToken: args["github-token"],
       claudeCode: args["claude-code"],
       showToken: args["show-token"],
+      proxyEnv: args["proxy-env"],
     })
   },
 })
